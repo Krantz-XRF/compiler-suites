@@ -1,0 +1,48 @@
+name:                compiler-suites
+version:             0.1.0.0
+github:              "Krantz-XRF/compiler-suites"
+license:             BSD3
+author:              "Krantz-XRF"
+maintainer:          "Krantz.XRF@outlook.com"
+copyright:           "Krantz-XRF 2018"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/Krantz-XRF/compiler-suites#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+  source-dirs: src
+
+executables:
+  compiler-suites-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - compiler-suites
+
+tests:
+  compiler-suites-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - compiler-suites
