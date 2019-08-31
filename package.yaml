@@ -21,9 +21,15 @@ description:         Please see the README on GitHub at <https://github.com/Kran
 
 dependencies:
 - base >= 4.7 && < 5
+- array >= 0.5.3
+- containers >= 0.6.0
+- mtl >= 2.2.2
 
 library:
   source-dirs: src
+  ghc-options:
+  - -Wall
+  - -O
 
 executables:
   compiler-suites-exe:
@@ -33,6 +39,7 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -Wall
     dependencies:
     - compiler-suites
 
@@ -44,5 +51,6 @@ tests:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -Wall
     dependencies:
     - compiler-suites
