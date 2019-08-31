@@ -1,6 +1,5 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE EmptyDataDecls #-}
 module Lexer.Nfa where
 
 import qualified Data.Map.Strict as Map
