@@ -1,36 +1,37 @@
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Printer where
 
+import Control.Monad.Reader
+import Control.Monad.Writer.Custom
 import Control.Monad.Identity
 
-newtype PrinterT m a = PrinterT { runPrinterT :: Int -> m (a, String -> String) }
+newtype PString = PString { unwrapPString :: String -> String }
+instance Semigroup PString where PString p <> PString q = PString (p . q)
+instance Monoid PString where mempty = PString id
+instance Show PString where show p = unwrapPString p ""
 
-instance Monad m => Functor (PrinterT m) where
-    fmap f a = PrinterT $ \n -> do
-        (x, p) <- runPrinterT a n
-        return (f x, p)
+data PrinterStatus = PrinterStatus
+    { printerIndent :: Int
+    , printerSeparators :: [PString]
+    }
 
-instance Monad m => Applicative (PrinterT m) where
-    pure x = PrinterT $ \_ -> return (x, id)
-    mf <*> mx = PrinterT $ \n -> do
-        (f, p1) <- runPrinterT mf n
-        (x, p2) <- runPrinterT mx n
-        return (f x, p1 . p2)
-
-instance Monad m => Monad (PrinterT m) where
-    return = pure
-    m >>= f = PrinterT $ \n -> do
-        (x, p1) <- runPrinterT m n
-        (res, p2) <- runPrinterT (f x) n
-        return (res, p1 . p2)
+-- | Printer Monad 转换器
+newtype PrinterT m a = PrinterT
+    { runPrinterT :: ReaderT PrinterStatus (WriterT PString m) a }
+    deriving newtype (Functor, Applicative, Monad)
+    deriving newtype (MonadReader PrinterStatus, MonadWriter PString)
 
 plain :: Monad m => String -> PrinterT m ()
-plain s = PrinterT $ \_ -> return ((), showString s)
+plain = tell . PString . showString
 
 line :: Monad m => PrinterT m ()
-line = PrinterT $ \n -> return ((), showChar '\n' . showString (replicate n ' '))
+line = do
+    n <- asks printerIndent
+    tell $ PString $ showChar '\n' . showString (replicate n ' ')
 
 indent :: Monad m => Int -> PrinterT m a -> PrinterT m a
-indent n p = PrinterT $ \_ -> runPrinterT p n
+indent n = local (\ps -> ps{ printerIndent = printerIndent ps + n })
 
 pShow :: (Monad m, Show a) => a -> PrinterT m ()
 pShow = plain . show
@@ -38,4 +39,4 @@ pShow = plain . show
 type Printer = PrinterT Identity
 
 runPrinter :: Printer a -> String
-runPrinter = ($ "") . snd . runIdentity . ($ 0) . runPrinterT
+runPrinter = show . execWriter . (`runReaderT` PrinterStatus 0 []) . runPrinterT
