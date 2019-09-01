@@ -28,3 +28,7 @@ data Dfa c a = Dfa
     , dfaStates :: Arr.Array FsmState (StateInfo a)
     , dfaInputs :: Arr.Array FsmInput c
     } deriving stock (Show)
+
+-- | DFA 的无效状态
+pattern InvalidState :: FsmState
+pattern InvalidState = FsmState (-1)
