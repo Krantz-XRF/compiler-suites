@@ -23,7 +23,7 @@ newtype WriterT w m a = WriterT' { runWriterT' :: StateT w m a }
     deriving newtype (Functor, Applicative, Monad, MonadTrans)
 
 -- | 匹配成通常熟悉的 WriterT 的模式
--- 即 newtype WriterT w m a = WriterT { runWriterT :: m (w, a) }
+-- 即 @newtype WriterT w m a = WriterT { runWriterT :: m (w, a) }@
 pattern WriterT :: (Monoid w, Monad m) => m (a, w) -> WriterT w m a
 pattern WriterT m <- (runWriterT -> m)
     where WriterT m = lift m >>= writer
