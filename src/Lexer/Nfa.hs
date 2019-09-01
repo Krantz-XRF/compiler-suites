@@ -32,24 +32,24 @@ instance Show Empty where show _ = ""
 -- | 将 NFA 以 GraphViz DOT 格式输出为一个字符串
 nfaToDot :: (Enum c, Show c, Show a) => Nfa c a -> String
 nfaToDot m = runPrinter $ do
-    plain "digraph NFAs {";
+    plain "digraph NFA {";
     indent 2 $ do
-        line; plain "node[shape=point,color=white,fontcolor=white]; start;"
-        line; plain "rankdir=LR;"
-        line; plain "node[color=black,fontcolor=black];"
-        line; plain "node[shape=doublecircle];"
+        plain "node[shape=point,color=white,fontcolor=white]; start;"
+        plain "rankdir=LR;"
+        plain "node[color=black,fontcolor=black];"
+        plain "node[shape=doublecircle];"
         forM_ (Map.toAscList $ nfaFinal m) $ \(FsmState s, x) ->
-            do line; pShow s; plain "[xlabel=\""; pShow x; plain "\"];"
-        line; plain "node[shape=circle];"
-        line; plain "start->0;"
+            joint $ do pShow s; plain "[xlabel=\""; pShow x; plain "\"];"
+        plain "node[shape=circle];"
+        plain "start->0;"
         let trans = nfaTransition m
         let inputs = nfaInputs m
         let (s0, sN) = Arr.bounds trans
         forM_ [s0 .. sN] $ \s@(FsmState sVal) ->
             let arcs = trans Arr.! s
             in forM_ (Map.toAscList arcs) $ \(a, ts) ->
-                forM_ (Set.toAscList ts) $ \(FsmState t) -> do
-                    line; pShow sVal; plain "->"; pShow t
+                forM_ (Set.toAscList ts) $ \(FsmState t) -> joint $ do
+                    pShow sVal; plain "->"; pShow t
                     plain "[label=\""
                     if a == Epsilon then plain "ε" else do
                         plain "["
@@ -58,7 +58,7 @@ nfaToDot m = runPrinter $ do
                         pShow $ pred $ inputs Arr.! succ a
                         plain "]"
                     plain "\"];"
-    line; plain "}"
+    plain "}"
 
 -- | 去除 NFA 所有结束状态的标签
 -- * 如果标签数据很大，可以防止输出为 DOT 时过大
