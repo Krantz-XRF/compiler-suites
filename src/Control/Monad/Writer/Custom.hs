@@ -6,9 +6,11 @@
 {-# LANGUAGE ViewPatterns #-}
 module Control.Monad.Writer.Custom
     ( module Control.Monad.Writer.Class
-    , WriterT(WriterT)
+    , WriterT(.., WriterT)
     , runWriterT
     , execWriterT
+    , Writer
+    , runWriter
     , execWriter
     ) where
 
@@ -20,12 +22,19 @@ import Control.Monad.Identity
 newtype WriterT w m a = WriterT' { runWriterT' :: StateT w m a }
     deriving newtype (Functor, Applicative, Monad, MonadTrans)
 
-runWriterT :: (Monad m, Monoid w) => WriterT w m a -> m (a, w)
-runWriterT m = runStateT (runWriterT' m) mempty
-
+-- | 匹配成通常熟悉的 WriterT 的模式
+-- 即 newtype WriterT w m a = WriterT { runWriterT :: m (w, a) }
 pattern WriterT :: (Monoid w, Monad m) => m (a, w) -> WriterT w m a
 pattern WriterT m <- (runWriterT -> m)
     where WriterT m = lift m >>= writer
+
+-- | 运行 WriterT Monad 转换器，得到返回值和写出的信息
+runWriterT :: (Monad m, Monoid w) => WriterT w m a -> m (a, w)
+runWriterT m = runStateT (runWriterT' m) mempty
+
+-- | 运行 WriterT Monad 转换器，舍弃返回值
+execWriterT :: (Monad m, Monoid w) => WriterT w m a -> m w
+execWriterT m = snd <$> runWriterT m
 
 instance (Monoid w, Monad m) => MonadWriter w (WriterT w m) where
     tell w = WriterT' $ modify' (<> w)
@@ -35,10 +44,13 @@ instance (Monoid w, Monad m) => MonadWriter w (WriterT w m) where
         WriterT' (modify' f)
         return x
 
+-- | 普通的 Writer Monad
 type Writer w = WriterT w Identity
 
-execWriterT :: (Monad m, Monoid w) => WriterT w m a -> m w
-execWriterT m = snd <$> runWriterT m
+-- | 运行 Writer Monad，得到返回值和写出的信息
+runWriter :: Monoid w => Writer w a -> (a, w)
+runWriter = runIdentity . runWriterT
 
+-- | 运行 Writer Monad，舍弃返回值
 execWriter :: Monoid w => Writer w a -> w
 execWriter = runIdentity . execWriterT
