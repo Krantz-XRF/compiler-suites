@@ -36,6 +36,7 @@ nfaToDot m = runPrinter $ do
     indent 2 $ do
         plain "node[shape=point,color=white,fontcolor=white]; start;"
         plain "rankdir=LR;"
+        plain "overlap=false;"
         plain "node[color=black,fontcolor=black];"
         plain "node[shape=doublecircle];"
         forM_ (Map.toAscList $ nfaFinal m) $ \(FsmState s, x) ->

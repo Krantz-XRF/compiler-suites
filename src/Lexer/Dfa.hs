@@ -43,6 +43,7 @@ dfaToDot m = runPrinter $ do
     indent 2 $ do
         plain "node[shape=point,color=white,fontcolor=white]; start;"
         plain "rankdir=LR;"
+        plain "overlap=false;"
         plain "node[color=black,fontcolor=black];"
         plain "node[shape=doublecircle];"
         forM_ [(s, x) | (FsmState s, AcceptState x) <- Arr.assocs (dfaStates m)] $ \(s, x) ->
