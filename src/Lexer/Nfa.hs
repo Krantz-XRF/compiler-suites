@@ -30,7 +30,7 @@ data Empty = Empty
 instance Show Empty where show _ = ""
 
 -- | 将 NFA 以 GraphViz DOT 格式输出为一个字符串
-nfaToDot :: (Enum c, Show c, Show a) => Nfa c a -> String
+nfaToDot :: (Enum c, Bounded c, Show c, Show a) => Nfa c a -> String
 nfaToDot m = runPrinter $ do
     plain "digraph NFA {";
     indent 2 $ do
@@ -44,6 +44,7 @@ nfaToDot m = runPrinter $ do
         plain "start->0;"
         let trans = nfaTransition m
         let inputs = nfaInputs m
+        let maxInput = snd (Arr.bounds inputs)
         let (s0, sN) = Arr.bounds trans
         forM_ [s0 .. sN] $ \s@(FsmState sVal) ->
             let arcs = trans Arr.! s
@@ -55,7 +56,9 @@ nfaToDot m = runPrinter $ do
                         plain "["
                         pShow $ inputs Arr.! a
                         plain ".."
-                        pShow $ pred $ inputs Arr.! succ a
+                        pShow $ if a == maxInput
+                            then maxBound
+                            else pred $ inputs Arr.! succ a
                         plain "]"
                     plain "\"];"
     plain "}"

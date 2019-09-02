@@ -121,4 +121,4 @@ addToClosure _ [] res = res
 addToClosure m (x:xs) res
     | x `Set.member` res = addToClosure m xs res
     | otherwise = let es = epsilonConvert m x
-        in addToClosure m (Set.toAscList es) $ addToClosure m xs $ res `Set.union` es
+        in addToClosure m (Set.toAscList es) $ addToClosure m xs $ x `Set.insert` res
