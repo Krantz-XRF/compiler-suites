@@ -7,15 +7,15 @@ import qualified Data.Array.IArray as Arr
 import Lexer.Common
 
 -- | DFA 各个状态的信息
-type StateInfo = Maybe
+data StateInfo a = AcceptState a | NormalState deriving stock (Show)
 
--- | DFA 的一个接受状态，接受时产生 a 类型的值
-pattern AcceptState :: a -> StateInfo a
-pattern AcceptState x = Just x
+instance Semigroup a => Semigroup (StateInfo a) where
+    NormalState <> x = x
+    x <> NormalState = x
+    AcceptState x <> AcceptState y = AcceptState (x <> y)
 
--- | DFA 的非接受状态
-pattern NormalState :: StateInfo a
-pattern NormalState = Nothing
+instance Semigroup a => Monoid (StateInfo a) where
+    mempty = NormalState
 
 -- | 确定的有穷自动机：
 -- * 状态用整数 FsmState (~ Int) 表示
