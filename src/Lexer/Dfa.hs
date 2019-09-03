@@ -1,13 +1,16 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Lexer.Dfa where
 
 import qualified Data.Array.IArray as Arr
 
 import Control.Monad
+import Data.Bifunctor
 
 import Lexer.Common
 import Printer
+import Utility
 
 -- | DFA 各个状态的信息
 data StateInfo a = AcceptState a | NormalState deriving stock (Show)
@@ -64,3 +67,23 @@ dfaToDot m = runPrinter $ do
                     else pred $ inputs Arr.! succ a
                 plain "]\"];"
     plain "}"
+
+-- | 在指定字符串上运行 DFA 获得结果
+runDfa :: forall c a . Ord c => Dfa c a -> [c] -> Either [FsmInput] (a, [c], [c])
+runDfa m = first collectInput . go (Left startState) startState [] where
+    inputs = dfaInputs m
+    states = dfaStates m
+    startState = FsmState 0
+    transition = dfaTransition m
+    collectInput :: FsmState -> [FsmInput]
+    collectInput s = filter (\i -> transition Arr.! (s, i) /= InvalidState)
+                   $ uncurry enumFromTo $ Arr.bounds inputs
+    trans :: FsmState -> c -> FsmState
+    trans s c = transition Arr.! (s, binarySearch inputs c)
+    go :: Either FsmState (a, [c], [c]) -> FsmState -> [c] -> [c] -> Either FsmState (a, [c], [c])
+    go res _ _   []     = res
+    go res s tok (x:xs) = case trans s x of
+        InvalidState -> res
+        t -> let tok' = x:tok in case states Arr.! t of
+            NormalState -> go res t tok' xs
+            AcceptState a -> go (Right (a, reverse tok', xs)) t tok' xs
