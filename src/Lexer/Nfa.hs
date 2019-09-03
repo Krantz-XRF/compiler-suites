@@ -34,7 +34,8 @@ nfaToDot :: (Enum c, Bounded c, Show c, Show a) => Nfa c a -> String
 nfaToDot m = runPrinter $ do
     plain "digraph NFA {";
     indent 2 $ do
-        plain "node[shape=point,color=white,fontcolor=white]; start;"
+        plain "node[shape=point,color=white,fontcolor=white];"
+        plain "start;"
         plain "rankdir=LR;"
         plain "overlap=false;"
         plain "node[color=black,fontcolor=black];"
