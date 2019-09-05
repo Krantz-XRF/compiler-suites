@@ -30,8 +30,8 @@ determineWith select m =
         start = epsilonClosure m (nfaStart m)
         -- DFA 的状态信息
         stateCount = Map.size (dfaBuilderStates res)
-        startState = FsmState 0
-        maxState = FsmState (stateCount - 1)
+        startState = 0
+        maxState = stateCount - 1
         -- 状态信息的初始值：仅含有 NFA 起始状态的 Epsilon-闭包
         initStates = Map.singleton start (startState, collectInfo start)
         -- 从初始状态出发构建 DFA 的转换表
@@ -69,7 +69,7 @@ determineWith select m =
                     -- 目标集合未记录……
                     Nothing -> do
                         -- 转换到该状态
-                        let n = FsmState (Map.size states)
+                        let n = Map.size states
                         let info = collectInfo tgt
                         -- 添加该集合
                         modifyStates (Map.insert tgt (n, info))

@@ -23,9 +23,9 @@ minimizeWith merge m = m
     newStateSet = Set.fromList (Arr.elems parent)
     newStateList = Set.toAscList newStateSet
     newStateCount = Set.size newStateSet
-    reps = Map.fromDistinctAscList $ zip newStateList [FsmState 0 ..]
+    reps = Map.fromDistinctAscList $ zip newStateList [0 ..]
     -- 新状态
-    (minState, maxState) = (FsmState 0, FsmState (newStateCount - 1))
+    (minState, maxState) = (0, newStateCount - 1)
     -- 从原始状态到新状态的映射
     replacement = fmap (reps Map.!) parent
     -- 新 DFA 的状态转换
@@ -43,7 +43,7 @@ minimizeWith merge m = m
               ]
     -- 新状态向着它表示的原始状态分组的代表元素的映射
     original :: Arr.Array FsmState FsmState
-    original = Arr.listArray (FsmState 0, FsmState (newStateCount - 1)) newStateList
+    original = Arr.listArray (0, newStateCount - 1) newStateList
     -- 反复迭代直到相等
     applyUntilEqual :: Eq a => (a -> a) -> a -> a
     applyUntilEqual f x = let y = f x in if y == x then x else applyUntilEqual f y

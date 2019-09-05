@@ -37,7 +37,7 @@ data Dfa c a = Dfa
 
 -- | DFA 的无效状态
 pattern InvalidState :: FsmState
-pattern InvalidState = FsmState (-1)
+pattern InvalidState = -1
 
 -- | 将 DFA 以 GraphViz DOT 格式输出为一个字符串
 dfaToDot :: (Enum c, Bounded c, Show c, Show a) => Dfa c a -> String
@@ -50,15 +50,15 @@ dfaToDot m = runPrinter $ do
         plain "overlap=false;"
         plain "node[color=black,fontcolor=black];"
         plain "node[shape=doublecircle];"
-        forM_ [(s, x) | (FsmState s, AcceptState x) <- Arr.assocs (dfaStates m)] $ \(s, x) ->
+        forM_ [(s, x) | (s, AcceptState x) <- Arr.assocs (dfaStates m)] $ \(s, x) ->
             joint $ do pShow s; plain "[xlabel=\""; pShow x; plain "\"];"
         plain "node[shape=circle];"
         plain "start->0;"
         let inputs = dfaInputs m
         let maxInput = snd (Arr.bounds inputs)
-        forM_ (Arr.assocs $ dfaTransition m) $ \((FsmState s, a), t@(FsmState tVal)) ->
+        forM_ (Arr.assocs $ dfaTransition m) $ \((s, a), t) ->
             when (t /= InvalidState) $ joint $ do
-                pShow s; plain "->"; pShow tVal
+                pShow s; plain "->"; pShow t
                 plain "[label=\"["
                 pShow $ inputs Arr.! a
                 plain ".."
@@ -73,7 +73,7 @@ runDfa :: forall c a . Ord c => Dfa c a -> [c] -> Either [FsmInput] (a, [c], [c]
 runDfa m = first collectInput . go (Left startState) startState [] where
     inputs = dfaInputs m
     states = dfaStates m
-    startState = FsmState 0
+    startState = 0
     transition = dfaTransition m
     collectInput :: FsmState -> [FsmInput]
     collectInput s = filter (\i -> transition Arr.! (s, i) /= InvalidState)

@@ -40,7 +40,7 @@ nfaToDot m = runPrinter $ do
         plain "overlap=false;"
         plain "node[color=black,fontcolor=black];"
         plain "node[shape=doublecircle];"
-        forM_ (Map.toAscList $ nfaFinal m) $ \(FsmState s, x) ->
+        forM_ (Map.toAscList $ nfaFinal m) $ \(s, x) ->
             joint $ do pShow s; plain "[xlabel=\""; pShow x; plain "\"];"
         plain "node[shape=circle];"
         plain "start->0;"
@@ -48,11 +48,11 @@ nfaToDot m = runPrinter $ do
         let inputs = nfaInputs m
         let maxInput = snd (Arr.bounds inputs)
         let (s0, sN) = Arr.bounds trans
-        forM_ [s0 .. sN] $ \s@(FsmState sVal) ->
+        forM_ [s0 .. sN] $ \s ->
             let arcs = trans Arr.! s
             in forM_ (Map.toAscList arcs) $ \(a, ts) ->
-                forM_ (Set.toAscList ts) $ \(FsmState t) -> joint $ do
-                    pShow sVal; plain "->"; pShow t
+                forM_ (Set.toAscList ts) $ \t -> joint $ do
+                    pShow s; plain "->"; pShow t
                     plain "[label=\""
                     if a == Epsilon then plain "ε" else do
                         plain "["

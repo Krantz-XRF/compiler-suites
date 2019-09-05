@@ -4,7 +4,7 @@
 {-# LANGUAGE ViewPatterns #-}
 module Lexer.Common
     ( FsmInput(.., Epsilon)
-    , FsmState(..)
+    , FsmState
     , AppendList(.., Nil, Append)
     , runAppendList
     , unsnoc
@@ -14,9 +14,7 @@ import qualified Data.Array.IArray as Arr
 import Utility (LinearIndex(..))
 
 -- | 状态机的状态 FsmState
-newtype FsmState = FsmState { unwrapFsmState :: Int }
-    deriving stock (Show)
-    deriving newtype (Eq, Ord, Enum, Arr.Ix)
+type FsmState = Int
 
 -- | 状态机的输入 FsmInput
 newtype FsmInput = FsmInput { unwrapFsmInput :: Int }

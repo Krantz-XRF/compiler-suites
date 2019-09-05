@@ -73,7 +73,7 @@ instance (Ord c, Enum c) => MonadNfaBuilder c (NfaBuilder c s) where
     newState = do
         s <- get
         put (s + 1)
-        return (FsmState s)
+        return s
     transition lo hi from to = do
         ps <- asks inputSplitPoints
         let loIdx = binarySearch ps lo
@@ -117,7 +117,7 @@ instance (Enum c, Ord c) => MonadNfaBuilder c (NfaInputCollector c) where
     newState = do
         s <- gets nfaTotalStateCount
         modify $ \info -> info{ nfaTotalStateCount = s + 1 }
-        return (FsmState s)
+        return s
     transition lo hi _ _ = modify $ updateSplitPoints $ Set.insert lo . Set.insert (succ hi)
     epsilonTrans _ _ = return ()
 
@@ -127,7 +127,7 @@ collectInput (NfaInputCollector f) = do
     let NfaInfo ps cnt = execState f emptyNfaInfo
     -- 生成的数组中，下标是从 1 开始的，因为 0 预留为 Epsilon
     let psArr = Arr.listArray (FsmInput 1, FsmInput $ Set.size ps) (Set.toAscList ps)
-    arcs <- Arr.newArray (FsmState 0, FsmState (cnt - 1)) Map.empty
+    arcs <- Arr.newArray (0, cnt - 1) Map.empty
     return NfaBuilderState
         { transitionArcs = arcs
         , inputSplitPoints = psArr
