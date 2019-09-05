@@ -14,7 +14,7 @@ import Lexer.Common
 import Printer
 
 -- | 非确定的有穷自动机：
--- * 状态用整数 FsmState (~ Int) 表示
+-- * 状态用整数 FsmState (= Int) 表示
 -- * 输入必须要预先编码成一个 FsmInput (~ Int)
 -- * 输入 (0 :: FsmInput) 用于表示 Epsilon
 -- * 开始状态

@@ -26,7 +26,7 @@ instance Semigroup a => Monoid (StateInfo a) where
     mempty = NormalState
 
 -- | 确定的有穷自动机：
--- * 状态用整数 FsmState (~ Int) 表示
+-- * 状态用整数 FsmState (= Int) 表示
 -- * 约定开始状态总是 0
 -- * 状态集合，标记所有结束状态的序号
 -- * 输入必须要预先编码成一个 FsmInput (~ Int)
