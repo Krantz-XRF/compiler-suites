@@ -16,7 +16,7 @@ import Control.Monad.Reader
 import Control.Monad.ST
 
 import qualified Data.Array.ST.Safe as Arr
-import qualified Data.Array.IArray as Arr
+import qualified Data.Array.Unboxed as Arr
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
@@ -31,7 +31,7 @@ import Utility
 -- * 当前的状态转移的描述
 data NfaBuilderState c s = NfaBuilderState
     { transitionArcs :: Arr.STArray s FsmState (Map.Map FsmInput (Set.Set FsmState))
-    , inputSplitPoints :: Arr.Array FsmInput c
+    , inputSplitPoints :: Arr.UArray FsmInput c
     }
 
 -- | 允许在 NFA Builder 中执行 ST 操作
@@ -69,7 +69,7 @@ newNfa proc = do
     proc s t
     return (TempNfa s t)
 
-instance (Ord c, Enum c) => MonadNfaBuilder c (NfaBuilder c s) where
+instance (Ord c, Enum c, Arr.IArray Arr.UArray c) => MonadNfaBuilder c (NfaBuilder c s) where
     newState = do
         s <- get
         put (s + 1)
@@ -122,7 +122,8 @@ instance (Enum c, Ord c) => MonadNfaBuilder c (NfaInputCollector c) where
     epsilonTrans _ _ = return ()
 
 -- | 收集 NFA Builder 中的所有输入数据分点，并初始化状态转移的存储空间
-collectInput :: Bounded c => NfaInputCollector c a -> ST s (NfaBuilderState c s)
+collectInput :: (Bounded c, Arr.IArray Arr.UArray c)
+             => NfaInputCollector c a -> ST s (NfaBuilderState c s)
 collectInput (NfaInputCollector f) = do
     let NfaInfo ps cnt = execState f emptyNfaInfo
     -- 生成的数组中，下标是从 1 开始的，因为 0 预留为 Epsilon
@@ -134,7 +135,8 @@ collectInput (NfaInputCollector f) = do
         }
 
 -- | 从 NFA Builder 构建 NFA
-buildNfa :: forall c f a . (InputType c, Foldable f) => (forall m . MonadNfaBuilder c m => m (f (a, TempNfa c))) -> Nfa c a
+buildNfa :: forall c f a . (InputType c, Foldable f, Arr.IArray Arr.UArray c)
+         => (forall m . MonadNfaBuilder c m => m (f (a, TempNfa c))) -> Nfa c a
 buildNfa builders = runST $ do
     let builderMono :: forall m . MonadNfaBuilder c m => m (FsmState, Map.Map FsmState a)
         builderMono = do

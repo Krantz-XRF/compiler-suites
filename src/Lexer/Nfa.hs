@@ -1,9 +1,11 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE StandaloneDeriving #-}
 module Lexer.Nfa where
 
 import qualified Data.Map.Strict as Map
-import qualified Data.Array.IArray as Arr
+import qualified Data.Array.Unboxed as Arr
 import qualified Data.Set as Set
 
 import Control.Monad (forM_)
@@ -21,8 +23,9 @@ data Nfa c a = Nfa
     { nfaTransition :: Arr.Array FsmState (Map.Map FsmInput (Set.Set FsmState))
     , nfaStart :: FsmState
     , nfaFinal :: Map.Map FsmState a
-    , nfaInputs :: Arr.Array FsmInput c
-    } deriving stock (Show, Functor)
+    , nfaInputs :: Arr.UArray FsmInput c
+    } deriving stock (Functor)
+deriving stock instance (Show a, Show c, Arr.IArray Arr.UArray c) => Show (Nfa c a)
 
 -- | 用于 NFA 输出使用的占位类型
 data Empty = Empty
@@ -30,7 +33,8 @@ data Empty = Empty
 instance Show Empty where show _ = ""
 
 -- | 将 NFA 以 GraphViz DOT 格式输出为一个字符串
-nfaToDot :: (Enum c, Bounded c, Show c, Show a) => Nfa c a -> String
+nfaToDot :: (Enum c, Bounded c, Show c, Show a, Arr.IArray Arr.UArray c)
+         => Nfa c a -> String
 nfaToDot m = runPrinter $ do
     plain "digraph NFA {";
     indent 2 $ do

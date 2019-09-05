@@ -1,6 +1,7 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Lexer.Dfa.Minimize where
 
-import Data.Array.IArray as Arr
+import Data.Array.Unboxed as Arr
 import Data.Map.Strict as Map
 import Data.Set as Set
 
@@ -12,7 +13,7 @@ import Lexer.Dfa
 -- | 最小化 DFA，使用给定的函数判断接受状态是否可以合并
 -- * 如果 merge 在两个附加值上计算出 Nothing，则认为不可以合并
 -- * 如果 merge 给出 Just x，将有可能把他们合并为 x
-minimizeWith :: (a -> a -> Maybe a) -> Dfa c a -> Dfa c a
+minimizeWith :: Arr.IArray Arr.UArray c => (a -> a -> Maybe a) -> Dfa c a -> Dfa c a
 minimizeWith merge m = m
     { dfaTransition = newTrans
     , dfaStates = newStates
@@ -85,5 +86,5 @@ minimizeWith merge m = m
     trans x i = dfaTransition m Arr.! (x, i)
 
 -- | 最小化 DFA，仅合并完全相同的接受状态
-minimize :: Eq a => Dfa c a -> Dfa c a
+minimize :: (Eq a, Arr.IArray Arr.UArray c) => Dfa c a -> Dfa c a
 minimize = minimizeWith $ \x y -> if x == y then Just x else Nothing

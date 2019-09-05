@@ -4,7 +4,7 @@
 module Lexer.Nfa.Determination where
 
 import qualified Data.Map.Strict as Map
-import qualified Data.Array.IArray as Arr
+import qualified Data.Array.Unboxed as Arr
 import qualified Data.Set as Set
 
 import Control.Monad.State
@@ -24,7 +24,7 @@ data DfaBuilder a = DfaBuilder
     , dfaBuilderStates :: Map.Map (Set.Set FsmState) (FsmState, StateInfo a)
     } deriving stock (Show)
 
-determineWith :: forall c a . (a -> a -> a) -> Nfa c a -> Dfa c a
+determineWith :: forall c a . Arr.IArray Arr.UArray c => (a -> a -> a) -> Nfa c a -> Dfa c a
 determineWith select m =
     let -- NFA 的起始状态的 Epsilon-闭包成为 DFA 的起始状态
         start = epsilonClosure m (nfaStart m)
@@ -89,7 +89,7 @@ determineWith select m =
             [] -> NormalState
             lst -> AcceptState (foldl1' select lst)
 
-determine :: Semigroup a => Nfa c a -> Dfa c a
+determine :: (Semigroup a, Arr.IArray Arr.UArray c) => Nfa c a -> Dfa c a
 determine = determineWith (<>)
 
 -- | a-弧转换：经过一个 a-弧能够到达的状态

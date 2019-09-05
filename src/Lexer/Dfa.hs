@@ -1,9 +1,11 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE StandaloneDeriving #-}
 module Lexer.Dfa where
 
-import qualified Data.Array.IArray as Arr
+import qualified Data.Array.Unboxed as Arr
 
 import Control.Monad
 import Data.Bifunctor
@@ -30,17 +32,18 @@ instance Semigroup a => Monoid (StateInfo a) where
 -- * 输入必须要预先编码成一个 FsmInput (~ Int)
 -- * 注：输入的 0 在 NFA 中已经预留给了 Epsilon，这里的输入从 1 开始
 data Dfa c a = Dfa
-    { dfaTransition :: Arr.Array (FsmState, FsmInput) FsmState
+    { dfaTransition :: Arr.UArray (FsmState, FsmInput) FsmState
     , dfaStates :: Arr.Array FsmState (StateInfo a)
-    , dfaInputs :: Arr.Array FsmInput c
-    } deriving stock (Show)
+    , dfaInputs :: Arr.UArray FsmInput c
+    }
+deriving stock instance (Show a, Show c, Arr.IArray Arr.UArray c) => Show (Dfa c a)
 
 -- | DFA 的无效状态
 pattern InvalidState :: FsmState
 pattern InvalidState = -1
 
 -- | 将 DFA 以 GraphViz DOT 格式输出为一个字符串
-dfaToDot :: (Enum c, Bounded c, Show c, Show a) => Dfa c a -> String
+dfaToDot :: (Enum c, Bounded c, Show c, Show a, Arr.IArray Arr.UArray c) => Dfa c a -> String
 dfaToDot m = runPrinter $ do
     plain "digraph DFA {";
     indent 2 $ do
@@ -69,7 +72,8 @@ dfaToDot m = runPrinter $ do
     plain "}"
 
 -- | 在指定字符串上运行 DFA 获得结果
-runDfa :: forall c a . Ord c => Dfa c a -> [c] -> Either [FsmInput] (a, [c], [c])
+runDfa :: forall c a . (Ord c, Arr.IArray Arr.UArray c)
+       => Dfa c a -> [c] -> Either [FsmInput] (a, [c], [c])
 runDfa m = first collectInput . go (Left startState) startState [] where
     inputs = dfaInputs m
     states = dfaStates m
