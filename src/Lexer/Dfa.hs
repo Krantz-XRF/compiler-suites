@@ -3,6 +3,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveLift #-}
 module Lexer.Dfa where
 
 import qualified Data.Array.Unboxed as Arr
@@ -14,8 +16,10 @@ import Lexer.Common
 import Printer
 import Utility
 
+import Language.Haskell.TH.Syntax
+
 -- | DFA 各个状态的信息
-data StateInfo a = AcceptState a | NormalState deriving stock (Show)
+data StateInfo a = AcceptState a | NormalState deriving stock (Show, Lift)
 
 instance Semigroup a => Semigroup (StateInfo a) where
     NormalState <> x = x
@@ -37,6 +41,19 @@ data Dfa c a = Dfa
     , dfaInputs :: Arr.UArray FsmInput c
     }
 deriving stock instance (Show a, Show c, Arr.IArray Arr.UArray c) => Show (Dfa c a)
+
+instance (Lift c, Lift a, Arr.IArray Arr.UArray c) => Lift (Dfa c a) where
+    lift (Dfa trans states inputs) = do
+        trans' <- liftArray trans
+        states' <- liftArray states
+        inputs' <- liftArray inputs
+        return (ConE 'Dfa `AppE` trans' `AppE` states' `AppE` inputs')
+
+liftArray :: (Lift i, Lift e, Arr.Ix i, Arr.IArray a e) => a i e -> Q Exp
+liftArray arr =
+    let bounds = Arr.bounds arr
+        elems = Arr.elems arr
+    in [| Arr.listArray bounds elems |]
 
 -- | DFA 的无效状态
 pattern InvalidState :: FsmState

@@ -2,6 +2,8 @@
 {-# LANGUAGE GeneralisedNewtypeDeriving #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveLift #-}
 module Lexer.Common
     ( FsmInput(.., Epsilon)
     , FsmState
@@ -11,6 +13,8 @@ module Lexer.Common
     ) where
 
 import qualified Data.Array.IArray as Arr
+import Language.Haskell.TH.Syntax
+
 import Utility (LinearIndex(..))
 
 -- | 状态机的状态 FsmState
@@ -18,7 +22,7 @@ type FsmState = Int
 
 -- | 状态机的输入 FsmInput
 newtype FsmInput = FsmInput { unwrapFsmInput :: Int }
-    deriving stock (Show)
+    deriving stock (Show, Lift)
     deriving newtype (Eq, Ord, Enum, Arr.Ix)
 instance LinearIndex FsmInput where
     median (FsmInput x) (FsmInput y) = let m = x + (y - x) `quot` 2 in FsmInput m
