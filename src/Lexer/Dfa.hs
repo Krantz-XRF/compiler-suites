@@ -5,6 +5,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE ViewPatterns #-}
 module Lexer.Dfa where
 
 import qualified Data.Array.Unboxed as Arr
@@ -15,6 +16,8 @@ import Data.Bifunctor
 import Lexer.Common
 import Printer
 import Utility
+
+import Lexer.Dfa.Input
 
 import Language.Haskell.TH.Syntax
 
@@ -89,9 +92,10 @@ dfaToDot m = runStringPrinter $ do
     plain "}"
 
 -- | 在指定字符串上运行 DFA 获得结果
-runDfa :: forall c a . (Ord c, Arr.IArray Arr.UArray c)
-       => Dfa c a -> [c] -> Either [FsmInput] (a, [c], [c])
-runDfa m = first collectInput . go (Left startState) startState [] where
+runDfa :: forall s c a . (DfaInput s c, Ord c, Arr.IArray Arr.UArray c)
+       => Dfa c a -> s -> Either [FsmInput] (a, s, s)
+runDfa m str = bimap collectInput handleSuccess $ go (Left startState) startState 0 str where
+    handleSuccess (a, n) = let (l, r) = splitTokenRest n str in (a, l, r)
     inputs = dfaInputs m
     states = dfaStates m
     startState = 0
@@ -101,10 +105,10 @@ runDfa m = first collectInput . go (Left startState) startState [] where
                    $ uncurry enumFromTo $ Arr.bounds inputs
     trans :: FsmState -> c -> FsmState
     trans s c = transition Arr.! (s, binarySearch inputs c)
-    go :: Either FsmState (a, [c], [c]) -> FsmState -> [c] -> [c] -> Either FsmState (a, [c], [c])
-    go res _ _   []     = res
-    go res s tok (x:xs) = case trans s x of
+    go :: Either FsmState (a, Int) -> FsmState -> Int -> s -> Either FsmState (a, Int)
+    go res s n (uncons -> Just (x, xs)) = case trans s x of
         InvalidState -> res
-        t -> let tok' = x:tok in case states Arr.! t of
-            NormalState -> go res t tok' xs
-            AcceptState a -> go (Right (a, reverse tok', xs)) t tok' xs
+        t -> let n' = succ n in case states Arr.! t of
+            NormalState -> go res t n' xs
+            AcceptState a -> go (Right (a, n')) t n' xs
+    go res _ _ _ = res
