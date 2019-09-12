@@ -87,4 +87,14 @@ minimizeWith merge m = m
 
 -- | 最小化 DFA，仅合并完全相同的接受状态
 minimize :: (Eq a, Arr.IArray Arr.UArray c) => Dfa c a -> Dfa c a
-minimize = minimizeWith $ \x y -> if x == y then Just x else Nothing
+minimize = minimizeWith mergeEq
+
+-- | 基于 Eq，仅仅允许合并相等的两个值
+mergeEq :: Eq a => a -> a -> Maybe a
+mergeEq x y
+    | x == y = Just x
+    | otherwise = Nothing
+
+-- | 基于 Semigroup，允许合并任意两个值
+mergeSemigroup :: Semigroup a => a -> a -> Maybe a
+mergeSemigroup x y = Just (x <> y)

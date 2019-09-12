@@ -24,6 +24,7 @@ data DfaBuilder a = DfaBuilder
     , dfaBuilderStates :: Map.Map (Set.Set FsmState) (FsmState, StateInfo a)
     } deriving stock (Show)
 
+-- | 使用给定的状态合并方法将 NFA 确定化为 DFA
 determineWith :: forall c a . Arr.IArray Arr.UArray c => (a -> a -> a) -> Nfa c a -> Dfa c a
 determineWith select m =
     let -- NFA 的起始状态的 Epsilon-闭包成为 DFA 的起始状态
@@ -89,6 +90,7 @@ determineWith select m =
             [] -> NormalState
             lst -> AcceptState (foldl1' select lst)
 
+-- | 将状态视为半群来合并将 NFA 确定化为 DFA
 determine :: (Semigroup a, Arr.IArray Arr.UArray c) => Nfa c a -> Dfa c a
 determine = determineWith (<>)
 

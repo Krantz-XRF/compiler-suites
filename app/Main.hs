@@ -1,13 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Main where
 
-import Lexer.Regex
-import Lexer.Nfa.Builder
-import Lexer.Nfa.Determination
-import Lexer.Dfa
-import Lexer.Dfa.Minimize
-
-import Control.Monad (mapM)
+import Lexer
 
 import Language.Haskell.TH.Syntax
 
@@ -20,7 +14,7 @@ main = do
     print (runDfa dfa str)
 
 dfa :: Dfa Char Token
-dfa = $(lift $ minimize $ determine $ buildNfa $ mapM (mapM buildRegex)
+dfa = $(lift $ buildDfaWith mergeEq (<>)
     [ (Type,        Range 'A' 'Z' `Concat` Many (Range 'A' 'Z' `Or` Range 'a' 'z'))
     , (Variable,    (Range 'a' 'z' `Or` sng '_') `Concat` Some (Range 'A' 'Z' `Or` Range 'a' 'z'))
     , (Decimal,     Range '1' '9' `Concat` Some (Range '0' '9'))
