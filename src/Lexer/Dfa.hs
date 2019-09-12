@@ -61,7 +61,7 @@ pattern InvalidState = -1
 
 -- | 将 DFA 以 GraphViz DOT 格式输出为一个字符串
 dfaToDot :: (Enum c, Bounded c, Show c, Show a, Arr.IArray Arr.UArray c) => Dfa c a -> String
-dfaToDot m = runPrinter $ do
+dfaToDot m = runStringPrinter $ do
     plain "digraph DFA {";
     indent 2 $ do
         plain "node[shape=point,color=white,fontcolor=white];"

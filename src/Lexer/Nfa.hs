@@ -35,7 +35,7 @@ instance Show Empty where show _ = ""
 -- | 将 NFA 以 GraphViz DOT 格式输出为一个字符串
 nfaToDot :: (Enum c, Bounded c, Show c, Show a, Arr.IArray Arr.UArray c)
          => Nfa c a -> String
-nfaToDot m = runPrinter $ do
+nfaToDot m = runStringPrinter $ do
     plain "digraph NFA {";
     indent 2 $ do
         plain "node[shape=point,color=white,fontcolor=white];"
