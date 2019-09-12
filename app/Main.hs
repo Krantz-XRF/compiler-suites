@@ -1,16 +1,17 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Main where
 
+import qualified Data.Text.IO as Text
+
 import Lexer
+import Utils
 
 import Language.Haskell.TH.Syntax
 
-import Utils
-
 main :: IO ()
 main = do
-    putStr (dfaToDot dfa)
-    str <- getLine
+    Text.putStrLn (dfaToDot dfa)
+    str <- Text.getLine
     print (runDfa dfa str)
 
 dfa :: Dfa Char Token

@@ -4,11 +4,12 @@
 {-# LANGUAGE StandaloneDeriving #-}
 module Lexer.Nfa where
 
+import Data.String
+import Control.Monad (forM_)
+
 import qualified Data.Map.Strict as Map
 import qualified Data.Array.Unboxed as Arr
 import qualified Data.Set as Set
-
-import Control.Monad (forM_)
 
 import Lexer.Common
 import Printer
@@ -33,9 +34,10 @@ data Empty = Empty
 instance Show Empty where show _ = ""
 
 -- | 将 NFA 以 GraphViz DOT 格式输出为一个字符串
-nfaToDot :: (Enum c, Bounded c, Show c, Show a, Arr.IArray Arr.UArray c)
-         => Nfa c a -> String
-nfaToDot m = runStringPrinter $ do
+nfaToDot :: (Enum c, Bounded c, Show c, Arr.IArray Arr.UArray c,
+             EfficientConcat s, Show a, Monoid s, IsString s)
+         => Nfa c a -> s
+nfaToDot m = runPrinter $ do
     plain "digraph NFA {";
     indent 2 $ do
         plain "node[shape=point,color=white,fontcolor=white];"

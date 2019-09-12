@@ -1,5 +1,10 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralisedNewtypeDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE DefaultSignatures #-}
 module Printer where
 
 import Control.Monad.Reader
@@ -62,6 +67,27 @@ instance (Monoid s, IsString s, Monad m) => MonadPrinter (PrinterT s m) where
     currentIndent = asks printerIndent
     joint = makeLine . local setJoint
 
+-- | 实现字符串高效连接
+class (Monoid (ConcatHelper s), IsString (ConcatHelper s)) => EfficientConcat s where
+    type ConcatHelper s :: *
+    runConcat :: ConcatHelper s -> s
+    {-# MINIMAL #-}
+    type ConcatHelper s = s
+    default runConcat :: ConcatHelper s ~ s => ConcatHelper s -> s
+    runConcat = id
+
+instance EfficientConcat String where
+    type ConcatHelper String = PString
+    runConcat s = unwrapPString s ""
+
+instance EfficientConcat Text.Text where
+    type ConcatHelper Text.Text = LText.Builder
+    runConcat = LText.toStrict . LText.toLazyText
+
+instance EfficientConcat LText.Text where
+    type ConcatHelper LText.Text = LText.Builder
+    runConcat = LText.toLazyText
+
 -- | 根据需要确定是否输出行首缩进空格和行尾换行符
 makeLine :: (Monoid s, IsString s, Monad m) => PrinterT s m a -> PrinterT s m a
 makeLine proc = do
@@ -80,17 +106,9 @@ pShow = plain . show
 type Printer s = PrinterT s Identity
 
 -- | 运行 Printer Monad 转换器
-runPrinterT :: (Monoid s, Monad m) => PrinterT s m a -> m s
-runPrinterT = execWriterT . flip runReaderT newPrinterStatus . unwrapPrinterT
+runPrinterT :: (Monoid s, Monad m, EfficientConcat s) => PrinterT (ConcatHelper s) m a -> m s
+runPrinterT = fmap runConcat . execWriterT . flip runReaderT newPrinterStatus . unwrapPrinterT
 
 -- | 运行 Printer Monad
-runPrinter :: Monoid s => Printer s a -> s
+runPrinter :: (Monoid s, EfficientConcat s) => Printer (ConcatHelper s) a -> s
 runPrinter = runIdentity . runPrinterT
-
--- | 使用 String 运行 Printer Monad
-runStringPrinter :: Printer PString a -> String
-runStringPrinter = flip unwrapPString "" . runPrinter
-
--- | 使用 Text 运行 Printer Monad
-runTextPrinter :: Printer LText.Builder a -> Text.Text
-runTextPrinter = LText.toStrict . LText.toLazyText . runPrinter

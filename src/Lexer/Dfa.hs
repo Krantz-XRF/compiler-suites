@@ -12,6 +12,7 @@ import qualified Data.Array.Unboxed as Arr
 
 import Control.Monad
 import Data.Bifunctor
+import Data.String
 
 import Lexer.Common
 import Printer
@@ -63,8 +64,10 @@ pattern InvalidState :: FsmState
 pattern InvalidState = -1
 
 -- | 将 DFA 以 GraphViz DOT 格式输出为一个字符串
-dfaToDot :: (Enum c, Bounded c, Show c, Show a, Arr.IArray Arr.UArray c) => Dfa c a -> String
-dfaToDot m = runStringPrinter $ do
+dfaToDot :: (Enum c, Bounded c, Show c, Arr.IArray Arr.UArray c,
+             EfficientConcat s, Show a, Monoid s, IsString s)
+         => Dfa c a -> s
+dfaToDot m = runPrinter $ do
     plain "digraph DFA {";
     indent 2 $ do
         plain "node[shape=point,color=white,fontcolor=white];"
