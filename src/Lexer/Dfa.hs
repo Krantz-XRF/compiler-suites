@@ -53,6 +53,7 @@ instance (Lift c, Lift a, Arr.IArray Arr.UArray c) => Lift (Dfa c a) where
         inputs' <- liftArray inputs
         return (ConE 'Dfa `AppE` trans' `AppE` states' `AppE` inputs')
 
+-- | 用于提升数组：提升方法是转换成 @listArray@
 liftArray :: (Lift i, Lift e, Arr.Ix i, Arr.IArray a e) => a i e -> Q Exp
 liftArray arr =
     let bounds = Arr.bounds arr

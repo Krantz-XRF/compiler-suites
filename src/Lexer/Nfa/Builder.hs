@@ -9,7 +9,13 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RoleAnnotations #-}
-module Lexer.Nfa.Builder where
+module Lexer.Nfa.Builder
+    ( MonadNfaBuilder(..)
+    , TempNfa(..)
+    , newNfa
+    , InputType
+    , buildNfa
+    ) where
 
 import Control.Monad.State
 import Control.Monad.Reader
@@ -102,9 +108,8 @@ updateSplitPoints :: (Set.Set c -> Set.Set c) -> (NfaInfo c -> NfaInfo c)
 updateSplitPoints f info = info{ nfaInputSplitPoints = f (nfaInputSplitPoints info) }
 
 -- | NFA 的输入收集器
-newtype NfaInputCollector c a = NfaInputCollector
-    { unwrapNfaInputCollector :: State (NfaInfo c) a
-    } deriving newtype (Functor, Applicative, Monad)
+newtype NfaInputCollector c a = NfaInputCollector (State (NfaInfo c) a)
+    deriving newtype (Functor, Applicative, Monad)
 deriving newtype instance MonadState (NfaInfo c) (NfaInputCollector c)
 
 -- | NFA 的输入
