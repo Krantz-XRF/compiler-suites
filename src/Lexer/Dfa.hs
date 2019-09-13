@@ -98,7 +98,7 @@ dfaToDot m = runPrinter $ do
 
 -- | 在指定字符串上运行 DFA 获得结果
 runDfa :: forall s c a . (DfaInput s c, Ord c, Arr.IArray Arr.UArray c)
-       => Dfa c a -> s -> Either [FsmInput] (a, s, s)
+       => Dfa c a -> s -> Either [(c, c)] (a, s, s)
 runDfa m str = bimap collectInput handleSuccess $ go (Left startState) startState 0 str where
     handleSuccess (a, n) = let (l, r) = splitTokenRest n str in (a, l, r)
     inputs = dfaInputs m
@@ -106,7 +106,8 @@ runDfa m str = bimap collectInput handleSuccess $ go (Left startState) startStat
     startState = 0
     transition = dfaTransition m
     collectInput :: FsmState -> [FsmInput]
-    collectInput s = filter (\i -> transition Arr.! (s, i) /= InvalidState)
+    collectInput s = getInputRanges
+                   $ filter (\i -> transition Arr.! (s, i) /= InvalidState)
                    $ uncurry enumFromTo $ Arr.bounds inputs
     trans :: FsmState -> c -> FsmState
     trans s c = transition Arr.! (s, binarySearch inputs c)
@@ -117,3 +118,23 @@ runDfa m str = bimap collectInput handleSuccess $ go (Left startState) startStat
             NormalState -> go res t n' xs
             AcceptState a -> go (Right (a, n')) t n' xs
     go res _ _ _ = res
+
+-- | 从输入下标到输入字符范围
+getInputRanges :: forall c a . Dfa c a -> [FsmInput] -> [(c, c)]
+getInputRanges m = map toInputs . collapse where
+    collapse :: [FsmInput] -> [(FsmInput, FsmInput)]
+    collapse [] = []
+    collapse (x:xs) = collapseWith x (succ x) xs
+    collapseWith :: FsmInput -> FsmInput -> [FsmInput] -> [(FsmInput, FsmInput)]
+    collapseWith start next [] = (start, next)
+    collapseWith start next (x:xs)
+        | next == x = collapseWith start x xs
+        | otherwise = (start, next) : collapseWith x x xs
+    toInput :: (FsmInput, FsmInput) -> (c, c)
+    toInput (l, r) = (inputs Arr.! l, if r == maxInput
+                                      then maxBound
+                                      else pred (inputs Arr.! r))
+    inputs :: Arr.UArray FsmInput c
+    inputs = dfaInputs m
+    maxInput :: FsmInput
+    (_, maxInput) = Arr.bounds inputs
