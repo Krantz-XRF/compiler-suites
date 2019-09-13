@@ -19,7 +19,7 @@ import Data.Array.Unboxed as Arr
 
 -- | 从正则表达式构建构建一个 Dfa
 buildDfaWith :: (Arr.IArray Arr.UArray c, Ord c, Enum c, Bounded c)
-               => (a -> a -> Maybe a) -> (a -> a -> a) -> [(a, Regex c)] -> Dfa c a
+             => (a -> a -> Maybe a) -> (a -> a -> a) -> [(a, Regex c)] -> Dfa c a
 buildDfaWith merge select lst
     = minimizeWith merge
     $ determineWith select
