@@ -6,6 +6,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Lexer.Dfa where
 
 import qualified Data.Array.Unboxed as Arr
@@ -69,31 +70,31 @@ dfaToDot :: (Enum c, Bounded c, Show c, Arr.IArray Arr.UArray c,
              EfficientConcat s, Show a, Monoid s, IsString s)
          => Dfa c a -> s
 dfaToDot m = runPrinter $ do
-    plain "digraph DFA {";
+    "digraph DFA {"
     indent 2 $ do
-        plain "node[shape=point,color=white,fontcolor=white];"
-        plain "start;"
-        plain "rankdir=LR;"
-        plain "overlap=false;"
-        plain "node[color=black,fontcolor=black];"
-        plain "node[shape=doublecircle];"
+        "node[shape=point,color=white,fontcolor=white];"
+        "start;"
+        "rankdir=LR;"
+        "overlap=false;"
+        "node[color=black,fontcolor=black];"
+        "node[shape=doublecircle];"
         forM_ [(s, x) | (s, AcceptState x) <- Arr.assocs (dfaStates m)] $ \(s, x) ->
-            joint $ do pShow s; plain "[xlabel=\""; pShow x; plain "\"];"
-        plain "node[shape=circle];"
-        plain "start->0;"
+            joint $ do pShow s; "[xlabel=\""; pShow x; "\"];"
+        "node[shape=circle];"
+        "start->0;"
         let inputs = dfaInputs m
         let maxInput = snd (Arr.bounds inputs)
         forM_ (Arr.assocs $ dfaTransition m) $ \((s, a), t) ->
             when (t /= InvalidState) $ joint $ do
-                pShow s; plain "->"; pShow t
-                plain "[label=\"["
+                pShow s; "->"; pShow t
+                "[label=\"["
                 pShow $ inputs Arr.! a
-                plain ".."
+                ".."
                 pShow $ if a == maxInput
                     then maxBound
                     else pred $ inputs Arr.! succ a
-                plain "]\"];"
-    plain "}"
+                "]\"];"
+    "}"
 
 -- | 在指定字符串上运行 DFA 获得结果
 runDfa :: forall s c a . (DfaInput s c, Ord c, Arr.IArray Arr.UArray c)

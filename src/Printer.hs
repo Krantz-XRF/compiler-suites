@@ -67,6 +67,9 @@ instance (Monoid s, IsString s, Monad m) => MonadPrinter (PrinterT s m) where
     currentIndent = asks printerIndent
     joint = makeLine . local setJoint
 
+instance (Monoid s, IsString s, Monad m, a ~ ()) => IsString (PrinterT s m a) where
+    fromString = plain
+
 -- | 实现字符串高效连接
 class (Monoid (ConcatHelper s), IsString (ConcatHelper s)) => EfficientConcat s where
     type ConcatHelper s :: *

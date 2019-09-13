@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Lexer.Nfa where
 
 import Data.String
@@ -38,18 +39,18 @@ nfaToDot :: (Enum c, Bounded c, Show c, Arr.IArray Arr.UArray c,
              EfficientConcat s, Show a, Monoid s, IsString s)
          => Nfa c a -> s
 nfaToDot m = runPrinter $ do
-    plain "digraph NFA {";
+    "digraph NFA {"
     indent 2 $ do
-        plain "node[shape=point,color=white,fontcolor=white];"
-        plain "start;"
-        plain "rankdir=LR;"
-        plain "overlap=false;"
-        plain "node[color=black,fontcolor=black];"
-        plain "node[shape=doublecircle];"
+        "node[shape=point,color=white,fontcolor=white];"
+        "start;"
+        "rankdir=LR;"
+        "overlap=false;"
+        "node[color=black,fontcolor=black];"
+        "node[shape=doublecircle];"
         forM_ (Map.toAscList $ nfaFinal m) $ \(s, x) ->
-            joint $ do pShow s; plain "[xlabel=\""; pShow x; plain "\"];"
-        plain "node[shape=circle];"
-        plain "start->0;"
+            joint $ do pShow s; "[xlabel=\""; pShow x; "\"];"
+        "node[shape=circle];"
+        "start->0;"
         let trans = nfaTransition m
         let inputs = nfaInputs m
         let maxInput = snd (Arr.bounds inputs)
@@ -58,18 +59,18 @@ nfaToDot m = runPrinter $ do
             let arcs = trans Arr.! s
             in forM_ (Map.toAscList arcs) $ \(a, ts) ->
                 forM_ (Set.toAscList ts) $ \t -> joint $ do
-                    pShow s; plain "->"; pShow t
-                    plain "[label=\""
-                    if a == Epsilon then plain "ε" else do
-                        plain "["
+                    pShow s; "->"; pShow t
+                    "[label=\""
+                    if a == Epsilon then "ε" else do
+                        "["
                         pShow $ inputs Arr.! a
-                        plain ".."
+                        ".."
                         pShow $ if a == maxInput
                             then maxBound
                             else pred $ inputs Arr.! succ a
-                        plain "]"
-                    plain "\"];"
-    plain "}"
+                        "]"
+                    "\"];"
+    "}"
 
 -- | 去除 NFA 所有结束状态的标签
 -- * 如果标签数据很大，可以防止输出为 DOT 时过大
