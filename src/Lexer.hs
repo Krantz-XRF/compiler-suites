@@ -1,10 +1,14 @@
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Lexer
     ( module Lexer.Regex
     , module Lexer.Dfa
     , mergeEq
     , mergeSemigroup
     , buildDfaWith
+    , Lexer
+    , runLexer
     , buildLexerFromDfa
     , buildLexerWith
     ) where
@@ -21,7 +25,6 @@ import Control.Monad.Except
 import Control.Monad.State
 
 import Data.Array.Unboxed as Arr
-import Data.Map.Strict as Map
 
 -- | 从正则表达式构建构建一个 Dfa
 buildDfaWith :: (Arr.IArray Arr.UArray c, Ord c, Enum c, Bounded c)
@@ -32,21 +35,25 @@ buildDfaWith merge select lst
     $ buildNfa
     $ mapM (mapM buildRegex) lst
 
-newtype Lexer c s m a = Lexer { unwrapLexer :: ExceptT [(c, c)] (State s m) a }
+newtype Lexer c s m a = Lexer { unwrapLexer :: ExceptT [(c, c)] (StateT s m) a }
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (MonadError [(c, c)], MonadState s)
 
-instance MonadTrans (Lexer c s) where
-    lift = lift . lift
+runLexer :: Lexer c s m a -> s -> m (Either [(c, c)] a, s)
+runLexer = runStateT . runExceptT . unwrapLexer
 
-buildLexerFromDfa :: (Ord a, DfaInput s c, Monad m) => Dfa c a -> (a -> s -> m b) -> Lexer c s m b
+instance MonadTrans (Lexer c s) where
+    lift = Lexer . lift . lift
+
+buildLexerFromDfa :: (Ord c, Bounded c, Enum c, DfaInput s c, Monad m, IArray UArray c)
+                  => Dfa c a -> (a -> s -> m b) -> Lexer c s m b
 buildLexerFromDfa m handler = do
-    let resultHandlerMap = Map.fromList handlers
     input <- get
     case runDfa m input of
         Left err -> throwError err
-        Right (t, tok, rest) -> put rest
-    lift (handler t tok)
+        Right (t, tok, rest) -> do
+            put rest
+            lift (handler t tok)
 
 buildLexerWith :: ( Arr.IArray Arr.UArray c
                   , Ord c, Enum c, Bounded c

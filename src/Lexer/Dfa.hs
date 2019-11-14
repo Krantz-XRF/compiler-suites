@@ -97,7 +97,7 @@ dfaToDot m = runPrinter $ do
     "}"
 
 -- | 在指定字符串上运行 DFA 获得结果
-runDfa :: forall s c a . (DfaInput s c, Ord c, Arr.IArray Arr.UArray c)
+runDfa :: forall s c a . (DfaInput s c, Ord c, Bounded c, Enum c, Arr.IArray Arr.UArray c)
        => Dfa c a -> s -> Either [(c, c)] (a, s, s)
 runDfa m str = bimap collectInput handleSuccess $ go (Left startState) startState 0 str where
     handleSuccess (a, n) = let (l, r) = splitTokenRest n str in (a, l, r)
@@ -105,8 +105,8 @@ runDfa m str = bimap collectInput handleSuccess $ go (Left startState) startStat
     states = dfaStates m
     startState = 0
     transition = dfaTransition m
-    collectInput :: FsmState -> [FsmInput]
-    collectInput s = getInputRanges
+    collectInput :: FsmState -> [(c, c)]
+    collectInput s = getInputRanges m
                    $ filter (\i -> transition Arr.! (s, i) /= InvalidState)
                    $ uncurry enumFromTo $ Arr.bounds inputs
     trans :: FsmState -> c -> FsmState
@@ -120,13 +120,14 @@ runDfa m str = bimap collectInput handleSuccess $ go (Left startState) startStat
     go res _ _ _ = res
 
 -- | 从输入下标到输入字符范围
-getInputRanges :: forall c a . Dfa c a -> [FsmInput] -> [(c, c)]
-getInputRanges m = map toInputs . collapse where
+getInputRanges :: forall c a . (Arr.IArray Arr.UArray c, Bounded c, Enum c)
+               => Dfa c a -> [FsmInput] -> [(c, c)]
+getInputRanges m = map toInput . collapse where
     collapse :: [FsmInput] -> [(FsmInput, FsmInput)]
     collapse [] = []
     collapse (x:xs) = collapseWith x (succ x) xs
     collapseWith :: FsmInput -> FsmInput -> [FsmInput] -> [(FsmInput, FsmInput)]
-    collapseWith start next [] = (start, next)
+    collapseWith start next [] = [(start, next)]
     collapseWith start next (x:xs)
         | next == x = collapseWith start x xs
         | otherwise = (start, next) : collapseWith x x xs
