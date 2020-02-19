@@ -56,3 +56,5 @@ tests:
     - -Wall
     dependencies:
     - compiler-suites
+    - QuickCheck
+    - hspec
