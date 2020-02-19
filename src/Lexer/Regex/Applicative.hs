@@ -1,5 +1,11 @@
 {-# LANGUAGE GADTs #-}
-module Lexer.Regex.Applicative (RE(..)) where
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ViewPatterns #-}
+module Lexer.Regex.Applicative
+  ( RE(.., Sng)
+  , manyFromTo
+  , manyFrom
+  ) where
 
 import Control.Applicative
 
@@ -13,6 +19,11 @@ data RE s a where
     Alt :: RE s a -> RE s a -> RE s a
     App :: RE s (a -> b) -> RE s a -> RE s b
     Fail :: RE s a
+
+-- |Regular expression to match a single character.
+pattern Sng :: (Enum s, Eq s) => (s -> a) -> s -> RE s a
+pattern Sng f c <- Ran f c ((succ c ==) -> True)
+  where Sng f c = Ran f c (succ c)
 
 parens :: ShowS -> ShowS
 parens s = showChar '(' . s . showChar ')'
@@ -91,5 +102,25 @@ instance Alternative (RE s) where
     x <|> Fail = x
     x <|> y = Alt x y
 
-    many = Many reverse [] (flip (:))
+    many (Eps _) = Eps []
+    many r = Many reverse [] (flip (:)) r
     some x = liftA2 (:) x (many x)
+
+-- |Repeat a regular expression.
+-- * If upper bound @Just u@, repeat [l, u) times.
+-- * If upper bound @Nothing@, repeat [l, +inf) times.
+manyFromTo :: Int -> Maybe Int -> RE s a -> RE s [a]
+manyFromTo l mu re
+  = foldr (<*>) (moreThan d)
+  $ replicate l (fmap (:) re)
+  where d = fmap (subtract l) mu
+        moreThan Nothing = many re
+        moreThan (Just n)
+          = foldl (<|>) Fail
+          $ take n
+          $ iterate (fmap (:) re <*>) (Eps [])
+
+-- |Repeat a regular expression.
+-- Equivalant to 'manyFrom' with upper bound 'Nothing'.
+manyFrom :: Int -> RE s a -> RE s [a]
+manyFrom l = manyFromTo l Nothing
